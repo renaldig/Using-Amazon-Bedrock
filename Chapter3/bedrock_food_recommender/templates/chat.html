@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Food Suggestion Chatbot</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        #chat-window { width: 100%; max-width: 600px; margin: auto; border: 1px solid #ccc; padding: 10px; overflow-y: auto; height: 300px; }
+        .chat-message { padding: 5px 10px; margin: 5px; border-radius: 10px; }
+        .user-message { background-color: #007bff; color: #fff; text-align: right; margin-left: 50px; }
+        .ai-message { background-color: #f1f1f1; text-align: left; margin-right: 50px; }
+        #chat-form { text-align: center; margin-top: 20px; }
+        #user_input { width: 70%; padding: 10px; }
+    </style>    
+</head>
+<body>
+    <h2 style="text-align:center">Food Suggestion Chatbot</h2>
+    <div id="chat-window"></div>
+    <form id="chat-form">
+        <input type="text" id="user_input" name="user_input" placeholder="Ask me about food...">
+        <button type="submit">Send</button>
+    </form>
+
+    <script>
+        document.getElementById('chat-form').onsubmit = async function(e) {
+            e.preventDefault();
+            const userInput = document.getElementById('user_input').value;
+            const response = await fetch('/suggest_food', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({user_input: userInput})
+            });
+            const data = await response.json();
+            const chatWindow = document.getElementById('chat-window');
+            const userMessage = document.createElement('div');
+            userMessage.classList.add('chat-message', 'user-message');
+            userMessage.textContent = userInput;
+            chatWindow.appendChild(userMessage);
+
+            const aiMessage = document.createElement('div');
+            aiMessage.classList.add('chat-message', 'ai-message');
+            aiMessage.textContent = data.response;
+            chatWindow.appendChild(aiMessage);
+
+            document.getElementById('user_input').value = ''; // Clear input field
+            chatWindow.scrollTop = chatWindow.scrollHeight; // Scroll to the bottom of the chat window
+        };
+    </script>
+</body>
+</html>
