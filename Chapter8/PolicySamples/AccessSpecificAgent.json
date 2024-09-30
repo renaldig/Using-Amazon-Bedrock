@@ -1,0 +1,22 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "AccessSpecificAgent",
+            "Effect": "Allow",
+            "Action": [
+                "bedrock:UpdateAgent",
+                "bedrock:InvokeAgent"
+            ],
+            "Resource": "arn:aws:bedrock:us-east-1:123456789012:agent/AGENT12345",
+            "Condition": {
+                "Bool": {
+                    "aws:SecureTransport": "true"
+                },
+                "StringEquals": {
+                    "aws:PrincipalTag/Role": "AIEngineer"
+                }
+            }
+        }
+    ]
+}

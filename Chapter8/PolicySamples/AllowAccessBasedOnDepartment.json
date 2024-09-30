@@ -1,0 +1,16 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "AllowAccessBasedOnDepartment",
+            "Effect": "Allow",
+            "Action": "bedrock:*",
+            "Resource": "*",
+            "Condition": {
+                "StringEquals": {
+                    "aws:RequestTag/Department": "Engineering"
+                }
+            }
+        }
+    ]
+}

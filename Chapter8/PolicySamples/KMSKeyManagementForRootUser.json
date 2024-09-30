@@ -1,0 +1,34 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "KMSKeyManagementForRootUser", #A
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "arn:aws:iam::123456789012:root"
+            },
+            "Action": [
+                "Action": "kms:*",
+            ],
+            "Resource": "arn:aws:kms:your-region:your-account-id:key/your-key-id"
+        },
+        {
+            "Sid": "BedrockAgentEncryptionDecryption", #B
+            "Effect": "Allow",
+            "Principal": {
+                "Service": "bedrock.amazonaws.com"
+            },
+            "Action": [
+                "kms:GenerateDataKey",
+                "kms:Decrypt"
+            ],
+            "Resource": "arn:aws:kms:your-region:your-account-id:key/your-key-id",
+            "Condition": {
+                "StringEquals": {
+                    "kms:ViaService": "bedrock.your-region.amazonaws.com",
+                    "kms:CallerAccount": "your-account-id"
+                }
+            }
+        }
+    ]
+}

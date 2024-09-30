@@ -1,0 +1,14 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "AgentsRole",
+            "Effect": "Allow",
+            "Action": [  
+                "bedrock:PrepareAgent",
+                "bedrock:InvokeAgent"
+            ],
+            "Resource": "*"
+        }
+    ]   
+}

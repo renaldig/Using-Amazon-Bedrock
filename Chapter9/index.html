@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Environmental Insights</title>
+    <script>
+        async function getInsights() {
+            const response = await fetch('YOUR_INVOKE_URL/get-insights');
+            const data = await response.json();
+            const insights = JSON.parse(data.body);
+
+            document.getElementById('output').innerText = `
+Averages:
+Temperature: ${insights.Averages.AverageTemperature}°C
+Humidity: ${insights.Averages.AverageHumidity}%
+CO₂ Levels: ${insights.Averages.AverageCO2} ppm
+
+Insights:
+${insights.Insights}
+            `;
+        }
+    </script>
+</head>
+<body>
+    <h1>Environmental Insights</h1>
+    <button onclick="getInsights()">Get Latest Insights</button>
+    <pre id="output"></pre>
+</body>
+</html>

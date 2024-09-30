@@ -1,0 +1,22 @@
+{
+    "Comment": "State machine for invoking Bedrock",
+    "StartAt": "Bedrock InvokeModel",
+    "States": {
+      "Bedrock InvokeModel": {
+        "Type": "Task",
+        "Resource": "arn:aws:states:::bedrock:invokeModel",
+        "Parameters": {
+          "ModelId": "arn:aws:bedrock:us-east-1::foundation-model/ai21.j2-mid-v1",
+          "Body": {
+            "prompt.$": "$.Comment",
+            "maxTokens": 300,
+            "temperature": 0.5,
+            "topP": 0.9
+          }
+        },
+        "End": true,
+        "OutputPath": "$.Body.completions[0].data.text"
+      }
+    }
+  }
+  
