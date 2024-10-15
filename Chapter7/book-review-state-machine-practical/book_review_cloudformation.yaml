@@ -1,0 +1,160 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudFormation template for an AWS Lambda function, Step Functions, and Amazon Bedrock integration for generating book reviews.
+
+Resources:
+  # IAM Role for Lambda Execution
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+                - states.amazonaws.com
+            Action: 
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: LambdaBedrockPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - bedrock:InvokeModel
+                  - states:StartExecution
+                  - states:StopExecution
+                  - states:DescribeExecution
+                  - lambda:InvokeFunction  # Required to allow invocation by S3
+                Resource: "*"
+
+  # Lambda Function Definition
+  MyLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: index.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Runtime: python3.8
+      Code:
+        ZipFile: |
+          import json
+          import boto3
+
+          def handler(event, context):
+              client = boto3.client('bedrock-runtime')
+              prompt = event['prompt']  # Extract step-specific prompt
+
+              # Create the request body for Bedrock API
+              body = json.dumps({
+                  "anthropic_version": "bedrock-2023-05-31",  # Required version
+                  "max_tokens": 500,  # Correct key for max tokens
+                  "messages": [
+                      {
+                          "role": "user",
+                          "content": [{"type": "text", "text": prompt}]
+                      }
+                  ]
+              })
+
+              # Invoke the model using Bedrock
+              response = client.invoke_model(
+                  modelId='anthropic.claude-3-sonnet-20240229-v1:0',
+                  contentType='application/json',
+                  accept='application/json',
+                  body=body
+              )
+
+              model_output = json.loads(response['body'].read())
+              return {
+                  'statusCode': 200,
+                  'body': model_output.get('content', 'No review generated.')
+              }
+      Timeout: 30
+
+  # S3 Bucket without event trigger
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: my-book-reviews-bucket
+
+  # Lambda Permission to Allow S3 to Invoke Lambda
+  LambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt MyLambdaFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: s3.amazonaws.com
+      SourceArn: !GetAtt S3Bucket.Arn
+
+  # Step Function State Machine Definition
+  BookReviewStateMachine:
+    Type: AWS::StepFunctions::StateMachine
+    Properties:
+      RoleArn: !GetAtt LambdaExecutionRole.Arn
+      DefinitionString: 
+        !Sub |
+          {
+            "StartAt": "Create Brief Overview",
+            "States": {
+              "Create Brief Overview": {
+                "Type": "Task",
+                "Resource": "${MyLambdaFunction.Arn}",
+                "Parameters": {
+                  "prompt": "Provide a brief overview of the book 'The Great Gatsby' in 1-2 sentences."
+                },
+                "ResultPath": "$.Create_Brief_Overview",
+                "Next": "Provide Plot Details"
+              },
+              "Provide Plot Details": {
+                "Type": "Task",
+                "Resource": "${MyLambdaFunction.Arn}",
+                "Parameters": {
+                  "prompt": "Detail the plot of the book 'The Great Gatsby' in a structured paragraph."
+                },
+                "ResultPath": "$.Provide_Plot_Details",
+                "Next": "Explore Themes"
+              },
+              "Explore Themes": {
+                "Type": "Task",
+                "Resource": "${MyLambdaFunction.Arn}",
+                "Parameters": {
+                  "prompt": "Explore and discuss the central themes of 'The Great Gatsby'."
+                },
+                "ResultPath": "$.Explore_Themes",
+                "Next": "Critique the Style"
+              },
+              "Critique the Style": {
+                "Type": "Task",
+                "Resource": "${MyLambdaFunction.Arn}",
+                "Parameters": {
+                  "prompt": "Critique the narrative style and tone of 'The Great Gatsby'."
+                },
+                "ResultPath": "$.Critique_the_Style",
+                "Next": "Synthesize the Review"
+              },
+              "Synthesize the Review": {
+                "Type": "Task",
+                "Resource": "${MyLambdaFunction.Arn}",
+                "Parameters": {
+                  "prompt.$": "States.Format('Synthesize a complete review for The Great Gatsby, including an introduction and conclusion, using the following inputs:\n\nOverview: {}\n\nPlot: {}\n\nThemes: {}\n\nStyle: {}\n\nCombine these into a cohesive, five-paragraph review.', $.Create_Brief_Overview.body[0].text, $.Provide_Plot_Details.body[0].text, $.Explore_Themes.body[0].text, $.Critique_the_Style.body[0].text)"
+                },
+                "End": true
+              }
+            }
+          }
+
+Outputs:
+  LambdaFunctionArn:
+    Description: "ARN of the Lambda function for generating book reviews"
+    Value: !GetAtt MyLambdaFunction.Arn
+  StepFunctionArn:
+    Description: "ARN of the Step Function State Machine"
+    Value: !Ref BookReviewStateMachine
+  S3BucketName:
+    Description: "Name of the S3 bucket for book review uploads"
+    Value: !Ref S3Bucket
