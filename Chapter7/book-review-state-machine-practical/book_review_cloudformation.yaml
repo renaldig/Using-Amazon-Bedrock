@@ -1,8 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: CloudFormation template for an AWS Lambda function, Step Functions, and Amazon Bedrock integration for generating book reviews.
-
 Resources:
-  # IAM Role for Lambda Execution
   LambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:

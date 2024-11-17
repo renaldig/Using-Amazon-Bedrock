@@ -4,18 +4,16 @@
     <title>Environmental Insights</title>
     <script>
         async function getInsights() {
-            const response = await fetch('YOUR_INVOKE_URL/get-insights');
+            const response = await fetch('https://1wiawaedn8.execute-api.us-west-2.amazonaws.com/prod/get-insights');
             const data = await response.json();
-            const insights = JSON.parse(data.body);
-
             document.getElementById('output').innerText = `
-Averages:
-Temperature: ${insights.Averages.AverageTemperature}°C
-Humidity: ${insights.Averages.AverageHumidity}%
-CO₂ Levels: ${insights.Averages.AverageCO2} ppm
+                Averages:
+                Temperature: ${data.Averages.AverageTemperature}°C
+                Humidity: ${data.Averages.AverageHumidity}%
+                CO2 Levels: ${data.Averages.AverageCO2} ppm
 
-Insights:
-${insights.Insights}
+                Insights:
+                ${data.Insights}
             `;
         }
     </script>
