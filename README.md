@@ -1,2 +1,2 @@
-# Bedrock-In-Action
-Repository for the code used in book Bedrock in Action.
+# Using-Amazon-Bedrock
+Repository for the code used in book Using-Amazon-Bedrock.
